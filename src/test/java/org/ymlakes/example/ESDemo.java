@@ -33,6 +33,8 @@ import org.elasticsearch.search.aggregations.metrics.cardinality.Cardinality;
 import org.elasticsearch.search.aggregations.metrics.max.Max;
 import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.junit.Before;
 import org.junit.Test;
@@ -383,6 +385,48 @@ public class ESDemo {
         for(SearchHit hit : hits){
             System.out.println(hit.getSourceAsString());
         }
+    }
+
+    @Test
+    public void testHighLight(){
+        QueryBuilder matchQuery = QueryBuilders.matchQuery("title", "php");
+        HighlightBuilder hiBuilder=new HighlightBuilder();
+        hiBuilder.preTags("<h2>");
+        hiBuilder.postTags("</h2>");
+        hiBuilder.field("title");
+        // 搜索数据
+        SearchResponse response = client.prepareSearch("accounts")
+                .setQuery(matchQuery)
+                .highlighter(hiBuilder)
+                .execute().actionGet();
+        for (SearchHit searchHit : response.getHits()) {
+            System.out.println(searchHit.getHighlightFields());
+        }
+    }
+
+    @Test
+    public void testSort(){
+        SearchResponse response = client.prepareSearch("book")
+                .setQuery(QueryBuilders.matchAllQuery())
+                .addSort("weight", SortOrder.DESC)
+                .execute().actionGet();
+        for (SearchHit searchHit : response.getHits()) {
+            System.out.println(searchHit.getHighlightFields()+":"+searchHit.getSourceAsString());
+        }
+    }
+
+    //分页
+    @Test
+    public void testPaging(){
+        SearchResponse response = client.prepareSearch("accounts")
+                .setQuery(QueryBuilders.matchAllQuery())
+                .setFrom(5)//从第几条开始查找
+                .setSize(2)//每次查两条
+                .execute().actionGet();
+        for (SearchHit searchHit : response.getHits()) {
+            System.out.println(searchHit.getSourceAsString());
+        }
+
     }
 
 
